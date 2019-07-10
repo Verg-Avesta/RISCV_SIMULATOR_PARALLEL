@@ -62,6 +62,7 @@ public:
                     imm=(b<<12)+(a<<11)+(imm<<5)+(rd<<1);
                     imm=signedExtend(imm,12);
                 }
+                rd=-1;
                 break;//S->ID
             case 3:
             case 19:
@@ -76,11 +77,14 @@ public:
                 imm=signedExtend(imm,11);
                 break;//I->ID
         }
+        //if(rd==10&&rs2==10)
+          //  std::cout<<"IDrd=8:"<<opcode<<' '<<f3<<' '<<rs1<<' '<<rs2<<' '<<reg[10]<<' '<<lock[10]<<std::endl;
+        ///forwarding
         if(loadlock){
             instruction empty;
             if(rs1!=-1&&lock[rs1]!=0) {bubble=1;return empty;}//rs1 is locked.return a bubble.向上传气泡
             else{bubble=0;rs1=reg[rs1];}//last time may be a bubble.this time 取值.
-            if(rs2!=-1&&lock[rs2]!=0) {bubble=1;return empty;}
+            if(rs2!=-1&&lock[rs2]!=0) {bubble=1;return empty;}///此处应还有一个bug
             else{bubble=0;rs2=reg[rs2];}
         }
         else{
@@ -105,6 +109,13 @@ public:
             result=PC;
             PC+=imm-4;
         }
+        if(opcode==99){
+            PClock=0;
+            if(jump>=notjump)PC+=imm-4;
+            jumpflag=(jump>=notjump);
+        }
+        //if(rd==10&&rs2==10)
+        //    std::cout<<"IDrd=8:"<<opcode<<' '<<f3<<' '<<rs1<<' '<<rs2<<' '<<saber<<' '<<avalon<<std::endl;
         return *this;
     }
     instruction EX(){
@@ -150,6 +161,13 @@ public:
                     case 6:result=((unsigned)rs1<(unsigned)rs2);break;//BLTU
                     case 7:result=((unsigned)rs1>=(unsigned)rs2);break;//BGEU
                 }
+                total+=1;
+                if(jumpflag==result){
+                    success+=1;
+                }
+                else errorflag=1;
+                if(result)jump++;
+                else notjump++;
                 break;
             case 3:result=rs1+imm;if(rd>0)lock[rd]=1;loadlock=1;break;//LB&LH&LW&LBU&LHU
             case 19:switch(f3){
@@ -171,8 +189,8 @@ public:
             case 103:result=rs1+imm;break;//JALR
         }
         saber=result;
-        //if(rd==8)
-        //    std::cout<<"EXrd=8:"<<opcode<<' '<<f3<<' '<<rs1<<' '<<rs2<<' '<<saber<<' '<<avalon<<std::endl;
+       // if(rd==10&&rs2==10)
+        //    std::cout<<"EXrd=8:"<<opcode<<' '<<f3<<' '<<rs1<<' '<<rs2<<' '<<rd<<' '<<avalon<<std::endl;
         return *this;
     }
     instruction MEM(){
@@ -210,8 +228,8 @@ public:
         }
         if(rd>0&&opcode!=35)lock[rd]=2;
         avalon=result;saber=0;
-        //if(rd==8)
-        //    std::cout<<"MEMrd=8:"<<opcode<<' '<<f3<<' '<<rs1<<' '<<rs2<<' '<<saber<<' '<<avalon<<std::endl;
+        //if(lock[10]==2)
+        //    std::cout<<"MEMlokc[10]=2:"<<opcode<<' '<<f3<<' '<<rs1<<' '<<rs2<<' '<<rd<<' '<<avalon<<std::endl;
         return *this;
     }
     void WB(){
@@ -236,7 +254,7 @@ public:
                 }
                 break;
             case 35:return;
-            case 99: switch(f3){
+            case 99: /*switch(f3){
                     case 0: PC=(result? PC+imm:PC+4)-4;break;
                     case 1: PC=(result? PC+imm:PC+4)-4;break;
                     case 4: PC=(result? PC+imm:PC+4)-4;break;
@@ -244,7 +262,7 @@ public:
                     case 6: PC=(result? PC+imm:PC+4)-4;break;
                     case 7: PC=(result? PC+imm:PC+4)-4;break;
                 }
-                PClock=0;
+                PClock=0;*/
                 break;
             case 3:if(rd!=0){
                     switch(f3){
@@ -275,8 +293,8 @@ public:
                 break;
             case 103:if(rd!=0)reg[rd]=PC;PC=result&0xfffffffe;PClock=0;break;
         }
-        //if(code==0xfeb66ae3)
-        //    std::cout<<"WBcode==0xfeb66ae3:"<<lock[11]<<' '<<lock[12]<<' '<<rs1<<' '<<rs2<<' '<<reg[11]<<' '<<reg[12]<<std::endl;
+        //if(rd==10&&rs2==10)
+          //  std::cout<<"WBrd=8:"<<opcode<<' '<<f3<<' '<<rs1<<' '<<rs2<<' '<<saber<<' '<<avalon<<std::endl;
         if(rd!=-1)lock[rd]=0;
         avalon=0;
         code=0;
