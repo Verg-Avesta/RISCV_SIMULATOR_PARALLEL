@@ -54,39 +54,42 @@ int main() {
     /* for(int i=0;i<maxn;i++)if(memory[i]!=0)cout<<hex<<i<<':'<<(int)memory[i]<<' ';
      cout<<endl<<length<<endl;*/
     int Code;
-    int flag=0;
     int i=0;
     instruction e1,e2,e3,e4;
-    while(true){
+    while(i<3000){
         Code=(int)((memory[PC+3]<<24)+(memory[PC+2]<<16)+(memory[PC+1]<<8)+memory[PC]);
         /*cout<<i++<<' ';
         cout<<hex<<PC<<' ';
-        cout<<bitset<32>(Code)<<endl;
+        //cout<<bitset<32>(Code)<<endl;
         cout<<hex<<(buff[3].code)<<endl;
         cout<<hex<<(int)memory[PC]<<(int)memory[PC+1]<<(int)memory[PC+2]<<(int)memory[PC+3]<<endl;*/
-        /**这是没有考虑control hazard的情况*/
-        if(buff[3].code)buff[3].WB();//lock off
-        if(buff[3].opcode==111||buff[3].opcode==103||buff[3].opcode==99){
+        if(buff[3].code!=0)buff[3].WB();//lock off
+        if(buff[3].opcode==103||buff[3].opcode==99){
             buff[0]=e1;
             buff[1]=e2;
             buff[2]=e3;
             buff[3]=e4;
             Code=(int)((memory[PC+3]<<24)+(memory[PC+2]<<16)+(memory[PC+1]<<8)+memory[PC]);
         }
-        if(buff[2].code)buff[3]=buff[2].MEM();
+        if(buff[2].code!=0)buff[3]=buff[2].MEM();
         else buff[3]=e3;
-        if(buff[1].code)buff[2]=buff[1].EX();//lock on
+        if(buff[1].code!=0)buff[2]=buff[1].EX();//lock on
         else buff[2]=e2;
-        if(buff[0].code)buff[1]=buff[0].ID();//产生气泡
+        if(buff[0].code!=0){buff[1]=buff[0].ID();}//产生气泡
         else buff[1]=e1;
-        if(!buff[0].bubble&&!PClock){buff[0]=IF(Code);PC+=4;}
+        if(buff[0].opcode==111){
+            Code=(int)((memory[PC+3]<<24)+(memory[PC+2]<<16)+(memory[PC+1]<<8)+memory[PC]);
+            buff[0]=IF(Code);
+            PC+=4;
+        }
+        if(!buff[0].bubble&&!PClock&&buff[1].opcode!=111){buff[0]=IF(Code);PC+=4;}
         if(PClock) buff[0]=e1;//把下面的一个变成气泡,之后正常向上走
         /*for(int j=0;j<32;j++)std::cout<<reg[j]<<' ';
         std::cout<<std::endl;*/
         if(memory[0x30004]!=0)  {cout<<((reg[10])&((1<<8)-1))<<endl;break;}
     }
 
-     /*for(int j=0;j<32;j++)cout<<reg[j]<<' ';*/
+    /*for(int j=0;j<32;j++)cout<<reg[j]<<' ';*/
     return 0;
 }
 /**第0个寄存器始终为0，尝试改变x0的操作必须失败*/
