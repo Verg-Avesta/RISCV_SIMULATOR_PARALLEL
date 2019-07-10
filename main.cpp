@@ -56,15 +56,15 @@ int main() {
     int Code;
     int i=0;
     instruction e1,e2,e3,e4;
-    while(i<3000){
+    while(true){
         Code=(int)((memory[PC+3]<<24)+(memory[PC+2]<<16)+(memory[PC+1]<<8)+memory[PC]);
-        /*cout<<i++<<' ';
+       /*cout<<i++<<' ';
         cout<<hex<<PC<<' ';
         //cout<<bitset<32>(Code)<<endl;
         cout<<hex<<(buff[3].code)<<endl;
         cout<<hex<<(int)memory[PC]<<(int)memory[PC+1]<<(int)memory[PC+2]<<(int)memory[PC+3]<<endl;*/
         if(buff[3].code!=0)buff[3].WB();//lock off
-        if(buff[3].opcode==103||buff[3].opcode==99){
+        if(buff[3].opcode==103){
             buff[0]=e1;
             buff[1]=e2;
             buff[2]=e3;
@@ -75,6 +75,15 @@ int main() {
         else buff[3]=e3;
         if(buff[1].code!=0)buff[2]=buff[1].EX();//lock on
         else buff[2]=e2;
+        if(errorflag){
+            if(jumpflag)PC-=buff[1].imm;
+            else PC+=buff[1].imm-8;
+            Code=(int)((memory[PC+3]<<24)+(memory[PC+2]<<16)+(memory[PC+1]<<8)+memory[PC]);
+            buff[0]=IF(Code);
+            PC+=4;
+            Code=(int)((memory[PC+3]<<24)+(memory[PC+2]<<16)+(memory[PC+1]<<8)+memory[PC]);
+            errorflag=0;
+        }
         if(buff[0].code!=0){buff[1]=buff[0].ID();}//产生气泡
         else buff[1]=e1;
         if(buff[0].opcode==111){
@@ -82,13 +91,17 @@ int main() {
             buff[0]=IF(Code);
             PC+=4;
         }
-        if(!buff[0].bubble&&!PClock&&buff[1].opcode!=111){buff[0]=IF(Code);PC+=4;}
+        if(buff[0].opcode==99&&!buff[0].bubble){
+            Code=(int)((memory[PC+3]<<24)+(memory[PC+2]<<16)+(memory[PC+1]<<8)+memory[PC]);
+            buff[0]=IF(Code);
+            PC+=4;
+        }
+        if(!buff[0].bubble&&!PClock&&buff[1].opcode!=111&&buff[1].opcode!=99){buff[0]=IF(Code);PC+=4;}
         if(PClock) buff[0]=e1;//把下面的一个变成气泡,之后正常向上走
-        /*for(int j=0;j<32;j++)std::cout<<reg[j]<<' ';
-        std::cout<<std::endl;*/
+        //for(int j=0;j<32;j++)std::cout<<reg[j]<<' ';cout<<endl;
         if(memory[0x30004]!=0)  {cout<<((reg[10])&((1<<8)-1))<<endl;break;}
     }
-
+    //cout<<success<<total<<(success/total)<<endl;
     /*for(int j=0;j<32;j++)cout<<reg[j]<<' ';*/
     return 0;
 }
