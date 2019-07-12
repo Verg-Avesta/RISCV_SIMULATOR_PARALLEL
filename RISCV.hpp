@@ -17,5 +17,6 @@ int loadlock=0;//标记是不是load以及load进行到的程度
 int jump=0,notjump=0;//跳和不跳分别的次数
 double success=0,total=0;//预测成功的次数以及预测的总数；
 int jumpflag=0,errorflag=0;//预测之后是否进行跳跃以及是否预测错误
+int willjump[20000]={0};//利用哈希检测跳不跳
 ///都是operator所需要用到的东西
 #endif //RISCV_BRANCH_PREDICTION_RISCV_H
