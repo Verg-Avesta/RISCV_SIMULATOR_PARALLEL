@@ -84,7 +84,7 @@ public:
             instruction empty;
             if(rs1!=-1&&lock[rs1]!=0) {bubble=1;return empty;}//rs1 is locked.return a bubble.向上传气泡
             else{bubble=0;rs1=reg[rs1];}//last time may be a bubble.this time 取值.
-            if(rs2!=-1&&lock[rs2]!=0) {bubble=1;return empty;}///此处应还有一个bug
+            if(rs2!=-1&&lock[rs2]!=0) {bubble=1;return empty;}
             else{bubble=0;rs2=reg[rs2];}
         }
         else{
@@ -111,8 +111,9 @@ public:
         }
         if(opcode==99){
             PClock=0;
-            if(jump>=notjump)PC+=imm-4;
-            jumpflag=(jump>=notjump);
+            int x=((unsigned)code>>19);
+            if(willjump[x]>0)PC+=imm-4;
+            jumpflag=(willjump[x]>0);
         }
         //if(rd==10&&rs2==10)
         //    std::cout<<"IDrd=8:"<<opcode<<' '<<f3<<' '<<rs1<<' '<<rs2<<' '<<saber<<' '<<avalon<<std::endl;
@@ -162,12 +163,12 @@ public:
                     case 7:result=((unsigned)rs1>=(unsigned)rs2);break;//BGEU
                 }
                 total+=1;
-                if(jumpflag==result){
-                    success+=1;
-                }
+                if(jumpflag==result)  success+=1;
                 else errorflag=1;
-                if(result)jump++;
-                else notjump++;
+
+                if(result){int x=((unsigned)code>>19);willjump[x]++;}
+                else {int x=((unsigned)code>>19);willjump[x]--;}
+
                 break;
             case 3:result=rs1+imm;if(rd>0)lock[rd]=1;loadlock=1;break;//LB&LH&LW&LBU&LHU
             case 19:switch(f3){
